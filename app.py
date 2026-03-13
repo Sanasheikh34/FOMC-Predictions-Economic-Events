@@ -11,28 +11,32 @@ _MEETINGS_CACHE = None
 _RATE_CHANGES = {}
 _MEETING_DECISIONS = {}  # Stores action type (Hold, Hike, Cut) for each meeting
 
+# Base directory = same folder as app.py (works on Render and locally)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 def load_data():
     """Load and process all data from files"""
     try:
         # Load federal funds data (CSV)
-        fed_funds = pd.read_csv(r"c:\Users\sana.sheikh\Downloads\fredgraph.csv")
+        fed_funds = pd.read_csv(os.path.join(BASE_DIR, "fredgraph.csv"))
         fed_funds['observation_date'] = pd.to_datetime(fed_funds['observation_date'])
         fed_funds = fed_funds.sort_values('observation_date')
         
-        # Load meeting premiums data (Excel)
-        downloads = r"c:\Users\sana.sheikh\Downloads"
-        files = os.listdir(downloads)
-        
+        # Load meeting premiums data (CSV or Excel)
         premium_file = None
-        for f in files:
+        for f in os.listdir(BASE_DIR):
             if 'PREMIUM' in f.upper() and '2021' in f:
-                premium_file = os.path.join(downloads, f)
+                premium_file = os.path.join(BASE_DIR, f)
                 break
         
         if not premium_file:
             raise FileNotFoundError("Meeting premiums file not found")
         
-        premiums = pd.read_excel(premium_file)
+        if premium_file.endswith('.xlsx') or premium_file.endswith('.xls'):
+            premiums = pd.read_excel(premium_file)
+        else:
+            premiums = pd.read_csv(premium_file)
+
         premiums['Timestamp'] = pd.to_datetime(premiums['Timestamp'])
         premiums = premiums.sort_values('Timestamp')
         
@@ -44,8 +48,6 @@ def load_data():
 def load_economic_indicators():
     """Load all 10 economic indicators data with color coding"""
     try:
-        downloads = r"c:\Users\sana.sheikh\Downloads"
-        
         # Define all 10 indicator types with their colors
         indicator_config = {
             'NFP.csv': {'name': 'NFP', 'color': '#4ade80', 'actual_col': 'Actual (K)', 'forecast_col': 'Forecast (K)', 'previous_col': 'Previous (K)'},
@@ -64,7 +66,7 @@ def load_economic_indicators():
         
         for filename, config in indicator_config.items():
             try:
-                filepath = os.path.join(downloads, filename)
+                filepath = os.path.join(BASE_DIR, filename)
                 if not os.path.exists(filepath):
                     print(f"File not found: {filepath}")
                     continue
@@ -111,29 +113,24 @@ def extract_meetings_from_excel():
         return _MEETINGS_CACHE
     
     try:
-        downloads = r"c:\Users\sana.sheikh\Downloads"
-        
-        # Load FOMC decisions CSV
+        # Load FOMC decisions CSV from same directory as app.py
         fomc_csv = None
-        for f in os.listdir(downloads):
+        for f in os.listdir(BASE_DIR):
             if 'fomc' in f.lower() and 'decision' in f.lower() and f.endswith('.csv'):
-                fomc_csv = os.path.join(downloads, f)
+                fomc_csv = os.path.join(BASE_DIR, f)
                 print(f"Loaded FOMC CSV: {fomc_csv}")
                 break
         
         meeting_dates = []
         
         if fomc_csv:
-            # Load meetings from FOMC decisions CSV
             fomc_df = pd.read_csv(fomc_csv)
             for idx, row in fomc_df.iterrows():
-                # Skip rows with "start" in Meeting_Date
                 meeting_name = str(row['Meeting_Date']).strip().lower()
                 if 'start' in meeting_name:
                     continue
                 
                 try:
-                    # Use Decision_Date which is already in YYYY-MM-DD format
                     date_str = str(row['Decision_Date']).strip()
                     if date_str and date_str != 'nan' and len(date_str) >= 10:
                         meeting_date = pd.to_datetime(date_str)
@@ -141,10 +138,8 @@ def extract_meetings_from_excel():
                         if meeting_date.year >= 2021 and meeting_date.year <= 2025:
                             meeting_dates.append(meeting_date)
                             
-                            # Store the rate change for this meeting
                             try:
                                 change_str = str(row['Change_bps']).strip()
-                                # Handle both "+25" and "25" formats
                                 if change_str and change_str != 'nan':
                                     rate_change = float(change_str.replace('+', ''))
                                     _RATE_CHANGES[meeting_date.strftime('%Y-%m-%d')] = rate_change
@@ -152,11 +147,9 @@ def extract_meetings_from_excel():
                                 print(f"Error parsing rate change: {e}")
                                 pass
                             
-                            # Store the action type (Hold, Hike, Cut) for this meeting
                             try:
                                 action = str(row['Action']).strip()
                                 if action and action != 'nan' and action != 'Initial Rate':
-                                    # Determine if it's a Hold, Hike, or Cut
                                     if 'hold' in action.lower():
                                         decision = 'Hold'
                                     elif 'hike' in action.lower():
@@ -166,7 +159,6 @@ def extract_meetings_from_excel():
                                     else:
                                         decision = action
                                     
-                                    # Get the basis points
                                     change_str = str(row['Change_bps']).strip()
                                     if change_str and change_str != 'nan' and change_str != '0':
                                         bps = float(change_str.replace('+', ''))
@@ -188,7 +180,6 @@ def extract_meetings_from_excel():
         
         if not meeting_dates:
             print("No meetings found in CSV, using hardcoded dates")
-            # Fallback to hardcoded dates
             MEETINGS = {
                 2021: ['2021-01-27', '2021-03-17', '2021-04-28', '2021-06-16',
                        '2021-07-28', '2021-09-22', '2021-11-03', '2021-12-15'],
@@ -233,7 +224,6 @@ def get_meeting_analysis(meeting_date_str):
         if not all_meetings:
             return None
         
-        # Find the meeting index
         meeting_idx = None
         for i, m in enumerate(all_meetings):
             if m.date() == meeting_date.date():
@@ -243,11 +233,9 @@ def get_meeting_analysis(meeting_date_str):
         if meeting_idx is None:
             return None
         
-        # Get actual rate change from FOMC CSV
         meeting_date_key = meeting_date.strftime('%Y-%m-%d')
         rate_change_bp = _RATE_CHANGES.get(meeting_date_key, 0)
         
-        # Get rate BEFORE the meeting (for pre-meeting limits)
         fed_data_before = fed_funds[fed_funds['observation_date'] < meeting_date].sort_values('observation_date')
         if len(fed_data_before) > 0:
             prev_upper = float(fed_data_before.iloc[-1]['DFEDTARU'])
@@ -256,7 +244,6 @@ def get_meeting_analysis(meeting_date_str):
             prev_upper = 0
             prev_lower = 0
         
-        # Get rate AFTER the meeting (post-meeting rate - new limits take effect the day after)
         next_day = meeting_date + timedelta(days=1)
         fed_data_after = fed_funds[fed_funds['observation_date'] >= next_day].sort_values('observation_date')
         if len(fed_data_after) > 0:
@@ -266,37 +253,29 @@ def get_meeting_analysis(meeting_date_str):
             post_upper = 0
             post_lower = 0
         
-        # Build charts for each FED level (FED1, FED2, FED3, etc.)
         charts_data = []
         
-        for fed_level in range(1, 7):  # FED1-FED6
+        for fed_level in range(1, 7):
             fed_col = f'FED{fed_level}'
             
             if fed_col not in premiums.columns:
                 continue
             
-            # For FED_N chart:
-            # FED1 shows data from the PREVIOUS meeting until CURRENT meeting
-            # FED2 shows data from 2 meetings ago until PREVIOUS meeting
-            # FED3 shows data from 3 meetings ago until 2 meetings ago, etc.
-            
             start_meeting_idx = meeting_idx - fed_level
             end_meeting_idx = meeting_idx - (fed_level - 1)
             
             if start_meeting_idx < 0:
-                continue  # Not enough data for this FED level
+                continue
             
             start_date = all_meetings[start_meeting_idx]
             end_date = all_meetings[end_meeting_idx]
             
-            # Get premium data STRICTLY within this date range (inclusive on both ends)
             mask = (premiums['Timestamp'] >= start_date) & (premiums['Timestamp'] <= end_date)
             date_range_data = premiums[mask].copy()
             
             if len(date_range_data) == 0:
                 continue
             
-            # For each date, get the FED forecast and calculate accuracy
             chart_points = []
             
             for idx, row in date_range_data.iterrows():
@@ -305,31 +284,25 @@ def get_meeting_analysis(meeting_date_str):
                 if pd.isna(forecast_rate):
                     continue
                 
-                # forecast_rate is already in basis points (e.g., -25.4 bp)
-                # Compare directly with actual rate change (also in bp)
                 predicted_change_bp = float(forecast_rate)
-                
-                # Accuracy: compare predicted change (bps) with actual change (bps)
                 accuracy = max(0, 100 - abs(predicted_change_bp - rate_change_bp))
                 
                 chart_points.append({
                     'date': row['Timestamp'].strftime('%Y-%m-%d'),
-                    'predicted': round(predicted_change_bp, 2),  # predicted change in bps
-                    'actual': float(rate_change_bp),  # actual change in bps
+                    'predicted': round(predicted_change_bp, 2),
+                    'actual': float(rate_change_bp),
                     'accuracy': round(float(accuracy), 2),
-                    'upper': post_upper,  # post-meeting upper limit
-                    'lower': post_lower,  # post-meeting lower limit
-                    'prev_upper': prev_upper,  # pre-meeting upper limit
-                    'prev_lower': prev_lower   # pre-meeting lower limit
+                    'upper': post_upper,
+                    'lower': post_lower,
+                    'prev_upper': prev_upper,
+                    'prev_lower': prev_lower
                 })
             
             if chart_points:
-                # Get economic indicators for this date range
                 indicators = load_economic_indicators()
                 chart_events = []
                 
                 if indicators is not None:
-                    # Filter indicators for this date range
                     mask = (indicators['Release_Date'] >= start_date) & (indicators['Release_Date'] <= end_date)
                     range_indicators = indicators[mask]
                     
@@ -355,7 +328,6 @@ def get_meeting_analysis(meeting_date_str):
                     'events': chart_events
                 })
         
-        # Get meeting decision info
         decision_info = _MEETING_DECISIONS.get(meeting_date_key, {'action': 'N/A', 'bps': 0})
         
         return {
@@ -374,24 +346,20 @@ def get_meeting_analysis(meeting_date_str):
 def calculate_daily_accuracy(start_date, end_date):
     """Calculate daily accuracy between market premiums and actual federal funds"""
     try:
-        fed_funds, premiums, nfp_data = load_data()
+        fed_funds, premiums = load_data()
         
         if fed_funds is None or premiums is None:
             return []
         
-        # Convert input dates to datetime
         start = pd.to_datetime(start_date)
         end = pd.to_datetime(end_date)
         
-        # Filter federal funds data by date range
         mask = (fed_funds['observation_date'] >= start) & (fed_funds['observation_date'] <= end)
         filtered_fed = fed_funds[mask].copy()
         
-        # Filter premiums data by date range
         mask_prem = (premiums['Timestamp'] >= start) & (premiums['Timestamp'] <= end)
         filtered_prem = premiums[mask_prem].copy()
         
-        # Calculate the midpoint of the federal funds range (target rate)
         filtered_fed['MidPoint'] = (filtered_fed['DFEDTARU'] + filtered_fed['DFEDTARL']) / 2
         
         result_data = []
@@ -401,13 +369,11 @@ def calculate_daily_accuracy(start_date, end_date):
             upper = row['DFEDTARU']
             lower = row['DFEDTARL']
             
-            # Find the closest premium data point before or on this date
             prem_before = filtered_prem[filtered_prem['Timestamp'] <= row['observation_date']]
             if len(prem_before) > 0:
                 latest_prem = prem_before.iloc[-1]
                 market_expectation = latest_prem['FED1'] if not pd.isna(latest_prem['FED1']) else 0
                 
-                # Calculate accuracy
                 if actual_rate != 0:
                     accuracy = max(0, 100 - abs(market_expectation - actual_rate))
                 else:
@@ -476,4 +442,5 @@ def meeting_analysis():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(debug=False, host='0.0.0.0', port=port)
