@@ -1,0 +1,42 @@
+Meeting_Date,Decision_Date,Fed_Funds_Rate_Lower(%),Fed_Funds_Rate_Upper(%),Change_bps,Action,Notes
+Start of 2021 (Pre-meeting),2021-01-01,0.00,0.25,0,Initial Rate,Rate at start of period (set in March 2020)
+January 2021,2021-01-27,0.00,0.25,0,Hold,No change
+March 2021,2021-03-17,0.00,0.25,0,Hold,No change
+April 2021,2021-04-28,0.00,0.25,0,Hold,No change
+June 2021,2021-06-16,0.00,0.25,0,Hold,No change
+July 2021,2021-07-28,0.00,0.25,0,Hold,No change
+September 2021,2021-09-22,0.00,0.25,0,Hold,No change
+November 2021,2021-11-03,0.00,0.25,0,Hold,Announced tapering of asset purchases
+December 2021,2021-12-15,0.00,0.25,0,Hold,Accelerated taper; dot plot signaled 3 hikes in 2022
+January 2022,2022-01-26,0.00,0.25,0,Hold,Signaled imminent rate hike
+March 2022,2022-03-16,0.25,0.50,+25,Hike,First hike since Dec 2018
+May 2022,2022-05-04,0.75,1.00,+50,Hike,+50 bps hike
+June 2022,2022-06-15,1.50,1.75,+75,Hike,+75 bps — largest hike since 1994
+July 2022,2022-07-27,2.25,2.50,+75,Hike,+75 bps
+September 2022,2022-09-21,3.00,3.25,+75,Hike,+75 bps
+November 2022,2022-11-02,3.75,4.00,+75,Hike,+75 bps
+December 2022,2022-12-14,4.25,4.50,+50,Hike,+50 bps; pace slowed
+January/February 2023,2023-02-01,4.50,4.75,+25,Hike,+25 bps
+March 2023,2023-03-22,4.75,5.00,+25,Hike,+25 bps
+May 2023,2023-05-03,5.00,5.25,+25,Hike,+25 bps
+June 2023,2023-06-14,5.00,5.25,0,Hold,Skipped — first pause since hiking cycle began
+July 2023,2023-07-26,5.25,5.50,+25,Hike,+25 bps — last hike of the cycle
+September 2023,2023-09-20,5.25,5.50,0,Hold,No change
+October/November 2023,2023-11-01,5.25,5.50,0,Hold,No change
+December 2023,2023-12-13,5.25,5.50,0,Hold,No change; dot plot signaled 3 cuts in 2024
+January 2024,2024-01-31,5.25,5.50,0,Hold,No change
+March 2024,2024-03-20,5.25,5.50,0,Hold,No change
+April/May 2024,2024-05-01,5.25,5.50,0,Hold,No change
+June 2024,2024-06-12,5.25,5.50,0,Hold,No change
+July 2024,2024-07-31,5.25,5.50,0,Hold,No change
+September 2024,2024-09-18,4.75,5.00,-50,Cut,First cut since March 2020; -50 bps
+November 2024,2024-11-07,4.50,4.75,-25,Cut,-25 bps
+December 2024,2024-12-18,4.25,4.50,-25,Cut,-25 bps
+January 2025,2025-01-29,4.25,4.50,0,Hold,No change
+March 2025,2025-03-19,4.25,4.50,0,Hold,No change
+May 2025,2025-05-07,4.25,4.50,0,Hold,No change
+June 2025,2025-06-18,4.25,4.50,0,Hold,No change
+July 2025,2025-07-30,4.25,4.50,0,Hold,No change
+September 2025,2025-09-17,4.00,4.25,-25,Cut,-25 bps
+October 2025,2025-10-29,3.75,4.00,-25,Cut,-25 bps; 10-2 vote; QT ended Dec 1
+December 2025,2025-12-10,3.50,3.75,-25,Cut,-25 bps; third cut of 2025; end of year rate
