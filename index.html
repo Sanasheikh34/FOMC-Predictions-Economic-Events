@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FOMC Meeting Premium Analysis</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        header {
+            background: linear-gradient(135deg, #0f0f0f 0%, #2d2d4d 100%);
+            padding: 40px 20px;
+            border-bottom: 3px solid #9f0fff;
+            box-shadow: 0 8px 32px rgba(159, 15, 255, 0.15);
+        }
+
+        header h1 {
+            font-size: 2.8rem;
+            color: #9f0fff;
+            text-align: center;
+            font-weight: 800;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            text-align: center;
+            color: #a0a0c0;
+            font-size: 1.1rem;
+            font-weight: 300;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .controls {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 2px solid #9f0fff;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 40px;
+            box-shadow: 0 8px 32px rgba(159, 15, 255, 0.1);
+        }
+
+        .controls h2 {
+            color: #9f0fff;
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 20px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-width: 250px;
+        }
+
+        label {
+            color: #9f0fff;
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        label input[type="checkbox"] {
+            margin-right: 8px;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #9f0fff;
+        }
+
+        select {
+            background-color: #0f0f1e;
+            border: 2px solid #9f0fff;
+            color: #e0e0e0;
+            padding: 14px 16px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        select:focus {
+            outline: none;
+            box-shadow: 0 0 12px rgba(159, 15, 255, 0.5);
+            background-color: #1a1a2e;
+        }
+
+        select:hover {
+            border-color: #c0a0ff;
+        }
+
+        button {
+            background: linear-gradient(135deg, #9f0fff 0%, #c0a0ff 100%);
+            color: #0f0f0f;
+            border: none;
+            padding: 14px 40px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px rgba(159, 15, 255, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(159, 15, 255, 0.5);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .error-message {
+            background-color: #3d1515;
+            border: 2px solid #ff6b6b;
+            color: #ff9d9d;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            font-weight: 500;
+        }
+
+        .error-message.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        .loading {
+            text-align: center;
+            color: #9f0fff;
+            padding: 40px 20px;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .meeting-decision-box {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 3px solid #9f0fff;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(159, 15, 255, 0.2);
+            min-width: fit-content;
+        }
+
+        .decision-label {
+            color: #a0a0c0;
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .decision-value {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+
+        .decision-hold {
+            border-color: #40c4ff;
+        }
+
+        .decision-hold .decision-value {
+            color: #40c4ff;
+        }
+
+        .decision-hike {
+            border-color: #ff6b6b;
+        }
+
+        .decision-hike .decision-value {
+            color: #ff6b6b;
+        }
+
+        .decision-cut {
+            border-color: #4ade80;
+        }
+
+        .decision-cut .decision-value {
+            color: #4ade80;
+        }
+
+        .decision-neutral {
+            border-color: #9f0fff;
+        }
+
+        .decision-neutral .decision-value {
+            color: #9f0fff;
+        }
+
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(700px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .chart-card {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 2px solid #9f0fff;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(159, 15, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .chart-card:hover {
+            box-shadow: 0 12px 48px rgba(159, 15, 255, 0.2);
+            transform: translateY(-4px);
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #9f0fff;
+        }
+
+        .chart-title {
+            color: #9f0fff;
+            font-size: 1.3rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .date-range-label {
+            color: #a0a0c0;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 350px;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        canvas {
+            max-height: 400px;
+        }
+
+        .placeholder {
+            text-align: center;
+            color: #656575;
+            padding: 60px 20px;
+            font-size: 1.1rem;
+        }
+
+        footer {
+            background-color: #0f0f0f;
+            border-top: 3px solid #9f0fff;
+            text-align: center;
+            padding: 25px;
+            color: #656575;
+            font-size: 0.9rem;
+            margin-top: 60px;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .event-panel {
+            position: fixed;
+            right: 0;
+            top: 0;
+            width: 350px;
+            height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-left: 3px solid #4ade80;
+            box-shadow: -4px 0 16px rgba(0, 0, 0, 0.5);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            overflow-y: auto;
+            padding-top: 0;
+        }
+
+        .event-panel.show {
+            transform: translateX(0);
+        }
+
+        .event-panel-header {
+            background: linear-gradient(135deg, #0f0f1f 0%, #1a1a2e 100%);
+            padding: 20px;
+            border-bottom: 2px solid #4ade80;
+            position: sticky;
+            top: 0;
+        }
+
+        .event-panel-title {
+            color: #4ade80;
+            font-size: 1.2rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .event-panel-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: #4ade80;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .event-panel-close:hover {
+            color: #7ed321;
+        }
+
+        .event-details {
+            padding: 20px;
+        }
+
+        .event-detail-row {
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(74, 222, 128, 0.1);
+        }
+
+        .event-detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .event-detail-label {
+            font-size: 0.85rem;
+            color: #a0a0c0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .event-detail-value {
+            font-size: 1.1rem;
+            color: #4ade80;
+            font-weight: 700;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0a0a0a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #9f0fff;
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #c0a0ff;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2rem;
+            }
+
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+
+            .control-group {
+                flex-direction: column;
+            }
+
+            .form-group {
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>📊 FOMC Meeting Analysis</h1>
+        <p>Market Premium Forecast Accuracy for Federal Reserve Meetings</p>
+    </header>
+
+    <div class="container">
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="controls">
+            <h2>Select Meeting</h2>
+            <div class="control-group">
+                <div class="form-group">
+                    <label for="meetingSelect">FOMC Meeting Date</label>
+                    <select id="meetingSelect" onchange="loadMeetingAnalysis()">
+                        <option value="">-- Select a Meeting --</option>
+                    </select>
+                </div>
+                <button onclick="loadMeetingAnalysis()">Analyze Meeting</button>
+                <div id="eventsToggleContainer"></div>
+            </div>
+        </div>
+
+    <div id="chartsArea">
+            <div class="placeholder">
+                <p>👈 Select a meeting date to view the forecast accuracy analysis</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="event-panel" id="eventPanel">
+        <div class="event-panel-header">
+            <div class="event-panel-title">NFP Event Details</div>
+            <button class="event-panel-close" onclick="closeEventPanel()">✕</button>
+        </div>
+        <div class="event-details" id="eventDetails"></div>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 FOMC Premium Analysis Dashboard. Real-time market expectations vs actual federal funds decisions.</p>
+    </footer>
+
+    <script>
+        let charts = [];
+        let currentAnalysisData = null;
+        let selectedIndicators = {
+            'NFP': true,
+            'ADP': true,
+            'CPI': true,
+            'Core PCE': true,
+            'Retail Sales': true,
+            'GDP': true,
+            'ECI': true,
+            'PPI': true,
+            'JOLTS': true,
+            'Jobless Claims': true
+        };
+
+        const indicatorColors = {
+            'NFP': '#4ade80',
+            'ADP': '#facc15',
+            'CPI': '#ef4444',
+            'Core PCE': '#3b82f6',
+            'Retail Sales': '#f97316',
+            'GDP': '#06b6d4',
+            'ECI': '#ec4899',
+            'PPI': '#a855f7',
+            'JOLTS': '#84cc16',
+            'Jobless Claims': '#6366f1'
+        };
+
+        // Register the event lines plugin globally
+        Chart.register({
+            id: 'eventLines',
+            afterDatasetsDraw(chart) {
+                const chartData = chart.data.eventData;
+                const dates = chart.data.dates;
+                
+                if (!chartData || chartData.length === 0 || !dates) return;
+
+                const ctx = chart.ctx;
+                const xScale = chart.scales.x;
+                const yScale = chart.scales.y;
+                
+                chartData.forEach(event => {
+                    // Skip if indicator is not selected
+                    if (!selectedIndicators[event.indicator_type]) return;
+                    
+                    // Find the index of this date in the dates array
+                    const eventIndex = dates.indexOf(event.date);
+                    if (eventIndex === -1) return;
+                    
+                    const x = xScale.getPixelForValue(eventIndex);
+                    const yTop = yScale.top;
+                    const yBottom = yScale.bottom;
+                    
+                    // Draw vertical line with color from indicator type
+                    const lineColor = event.color || '#9f0fff';
+                    ctx.save();
+                    ctx.strokeStyle = lineColor;
+                    ctx.lineWidth = 3;
+                    ctx.setLineDash([5, 5]);
+                    ctx.beginPath();
+                    ctx.moveTo(x, yTop);
+                    ctx.lineTo(x, yBottom);
+                    ctx.stroke();
+                    ctx.restore();
+                });
+            }
+        });
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.classList.add('show');
+            setTimeout(() => {
+                errorDiv.classList.remove('show');
+            }, 5000);
+        }
+
+        function injectIndicatorSelectors() {
+            const container = document.getElementById('eventsToggleContainer');
+            if (container.innerHTML === '') {
+                let html = '<div class="form-group" style="min-width: 100%;"><label style="display: block; margin-bottom: 10px;">Select Indicators to Display:</label>';
+                html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">';
+                
+                for (const [type, color] of Object.entries(indicatorColors)) {
+                    const isChecked = selectedIndicators[type] ? 'checked' : '';
+                    html += `
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox" value="${type}" class="indicator-checkbox" ${isChecked} onchange="updateSelectedIndicators()">
+                            <span style="width: 12px; height: 12px; background-color: ${color}; border-radius: 2px;"></span>
+                            <span>${type}</span>
+                        </label>
+                    `;
+                }
+                
+                html += '</div></div>';
+                container.innerHTML = html;
+            }
+        }
+
+        function updateSelectedIndicators() {
+            const checkboxes = document.querySelectorAll('.indicator-checkbox');
+            checkboxes.forEach(checkbox => {
+                selectedIndicators[checkbox.value] = checkbox.checked;
+            });
+            
+            // Redraw current charts
+            if (currentAnalysisData) {
+                renderCharts(currentAnalysisData);
+            }
+        }
+
+        function closeEventPanel() {
+            document.getElementById('eventPanel').classList.remove('show');
+        }
+
+        function showEventPanel(event) {
+            const panel = document.getElementById('eventPanel');
+            const details = document.getElementById('eventDetails');
+            const header = document.querySelector('.event-panel-title');
+            
+            // Update header color based on indicator type
+            header.textContent = `${event.indicator_type} Event Details`;
+            header.style.color = event.color || '#9f0fff';
+            panel.style.borderColor = event.color || '#9f0fff';
+            
+            // Format the data based on indicator type
+            let dataValue = '';
+            let forecastValue = '';
+            let previousValue = '';
+            let diffValue = '';
+            
+            // Determine the unit/format based on indicator type
+            const type = event.indicator_type;
+            if (type === 'NFP' || type === 'ADP' || type === 'JOLTS' || type === 'Jobless Claims') {
+                dataValue = `${event.actual.toFixed(type === 'JOLTS' ? 3 : 0)}${type === 'ADP' || type === 'NFP' || type === 'Jobless Claims' ? 'K' : 'M'}`;
+                forecastValue = `${event.forecast.toFixed(type === 'JOLTS' ? 3 : 0)}${type === 'ADP' || type === 'NFP' || type === 'Jobless Claims' ? 'K' : 'M'}`;
+                previousValue = `${event.previous.toFixed(type === 'JOLTS' ? 3 : 0)}${type === 'ADP' || type === 'NFP' || type === 'Jobless Claims' ? 'K' : 'M'}`;
+                diffValue = `${(event.actual - event.forecast).toFixed(type === 'JOLTS' ? 3 : 0)}${type === 'ADP' || type === 'NFP' || type === 'Jobless Claims' ? 'K' : 'M'}`;
+            } else {
+                // For percentage-based indicators (CPI, Core PCE, Retail Sales, GDP, ECI, PPI)
+                dataValue = `${event.actual.toFixed(2)}%`;
+                forecastValue = `${event.forecast.toFixed(2)}%`;
+                previousValue = `${event.previous.toFixed(2)}%`;
+                diffValue = `${(event.actual - event.forecast).toFixed(2)}%`;
+            }
+            
+            let unitLabel = 'Value';
+            if (type === 'NFP' || type === 'ADP' || type === 'Jobless Claims') unitLabel = 'Jobs (K)';
+            if (type === 'JOLTS') unitLabel = 'Job Openings (M)';
+            if (type === 'CPI' || type === 'Core PCE' || type === 'Retail Sales' || type === 'GDP' || type === 'ECI' || type === 'PPI') unitLabel = 'Change';
+            
+            let html = `
+                <div class="event-detail-row">
+                    <div class="event-detail-label">Release Date</div>
+                    <div class="event-detail-value">${new Date(event.date).toLocaleDateString('en-GB', {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'})}</div>
+                </div>
+                <div class="event-detail-row">
+                    <div class="event-detail-label">Reference Period</div>
+                    <div class="event-detail-value">${event.reference_period}</div>
+                </div>
+                <div class="event-detail-row">
+                    <div class="event-detail-label">Actual ${unitLabel}</div>
+                    <div class="event-detail-value">${dataValue}</div>
+                </div>
+                <div class="event-detail-row">
+                    <div class="event-detail-label">Forecast ${unitLabel}</div>
+                    <div class="event-detail-value">${forecastValue}</div>
+                </div>
+                <div class="event-detail-row">
+                    <div class="event-detail-label">Previous ${unitLabel}</div>
+                    <div class="event-detail-value">${previousValue}</div>
+                </div>
+                <div class="event-detail-row">
+                    <div class="event-detail-label">Actual vs Forecast</div>
+                    <div class="event-detail-value">${diffValue}</div>
+                </div>
+            `;
+            
+            details.innerHTML = html;
+            panel.classList.add('show');
+        }
+
+        async function loadAvailableMeetings() {
+            try {
+                const response = await fetch('/api/all-meetings');
+                const data = await response.json();
+
+                if (!response.ok || !data.meetings) {
+                    showError('Failed to load meetings');
+                    return;
+                }
+
+                const select = document.getElementById('meetingSelect');
+                select.innerHTML = '<option value="">-- Select a Meeting --</option>';
+
+                data.meetings.forEach(meeting => {
+                    const option = document.createElement('option');
+                    option.value = meeting.date;
+                    option.textContent = meeting.display;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                showError(`Error loading meetings: ${error.message}`);
+            }
+        }
+
+        async function loadMeetingAnalysis() {
+            const meetingDate = document.getElementById('meetingSelect').value;
+
+            if (!meetingDate) {
+                showError('Please select a meeting date');
+                return;
+            }
+
+            const chartsArea = document.getElementById('chartsArea');
+            chartsArea.innerHTML = '<div class="loading">Loading analysis data...</div>';
+
+            try {
+                const response = await fetch(`/api/meeting-analysis?date=${meetingDate}`);
+                const data = await response.json();
+
+                if (!response.ok || !data.charts) {
+                    showError(data.error || 'Failed to load meeting analysis');
+                    chartsArea.innerHTML = '<div class="placeholder">No data available for this meeting</div>';
+                    return;
+                }
+
+                renderCharts(data);
+            } catch (error) {
+                showError(`Error: ${error.message}`);
+                chartsArea.innerHTML = '<div class="placeholder">Error loading data</div>';
+            }
+        }
+
+        function renderCharts(analysisData) {
+            const chartsArea = document.getElementById('chartsArea');
+            
+            // Inject the indicator selectors if not already present
+            injectIndicatorSelectors();
+            
+            // Save current analysis data for toggling events
+            currentAnalysisData = analysisData;
+
+            if (!analysisData.charts || analysisData.charts.length === 0) {
+                chartsArea.innerHTML = '<div class="placeholder">No forecast data available for this meeting</div>';
+                return;
+            }
+
+            // Format the meeting decision
+            let decisionDisplay = analysisData.decision || 'N/A';
+            let decisionClass = 'decision-neutral';
+            
+            if (analysisData.decision === 'Hike') {
+                decisionClass = 'decision-hike';
+                decisionDisplay = `Hike (+${Math.abs(analysisData.change_bps).toFixed(0)}bp)`;
+            } else if (analysisData.decision === 'Cut') {
+                decisionClass = 'decision-cut';
+                decisionDisplay = `Cut (${analysisData.change_bps.toFixed(0)}bp)`;
+            } else if (analysisData.decision === 'Hold') {
+                decisionClass = 'decision-hold';
+                decisionDisplay = 'Hold (0bp)';
+            }
+
+            let html = `
+                <div class="meeting-decision-box ${decisionClass}">
+                    <div class="decision-label">FOMC Decision</div>
+                    <div class="decision-value">${decisionDisplay}</div>
+                </div>
+                <div class="charts-container">
+            `;
+
+            analysisData.charts.forEach((chartData, index) => {
+                const startDate = new Date(chartData.date_range.from);
+                const endDate = new Date(chartData.date_range.to);
+                const startDisplay = startDate.toLocaleDateString('en-GB');
+                const endDisplay = endDate.toLocaleDateString('en-GB');
+
+                html += `
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <div>
+                                <div class="chart-title">FED${chartData.fed_level} Forecast</div>
+                                <div class="date-range-label">${startDisplay} to ${endDisplay}</div>
+                            </div>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="chart-${index}"></canvas>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div></div>';
+            chartsArea.innerHTML = html;
+
+            // Destroy old charts
+            charts.forEach(chart => {
+                if (chart) chart.destroy();
+            });
+            charts = [];
+
+            // Create new charts
+            analysisData.charts.forEach((chartData, index) => {
+                const ctx = document.getElementById(`chart-${index}`).getContext('2d');
+
+                const dates = chartData.data.map(d => d.date);
+                const accuracy = chartData.data.map(d => d.accuracy);
+                const predicted = chartData.data.map(d => d.predicted);
+                const actual = chartData.data.map(d => d.actual);
+                const uppers = chartData.data.map(d => d.upper);
+                const lowers = chartData.data.map(d => d.lower);
+                const prevUppers = chartData.data.map(d => d.prev_upper);
+                const prevLowers = chartData.data.map(d => d.prev_lower);
+
+                const chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        dates: dates,
+                        eventData: chartData.events || [],
+                        datasets: [{
+                            label: 'Accuracy (%)',
+                            data: accuracy,
+                            borderColor: '#9f0fff',
+                            backgroundColor: 'rgba(159, 15, 255, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            fill: true,
+                            pointBackgroundColor: '#9f0fff',
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 2,
+                            pointRadius: 5,
+                            pointHoverRadius: 7
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'nearest',
+                            intersect: false
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                labels: {
+                                    color: '#e0e0e0',
+                                    font: {
+                                        size: 13,
+                                        weight: 'bold'
+                                    },
+                                    usePointStyle: true,
+                                    padding: 15
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(15, 15, 30, 0.95)',
+                                titleColor: '#9f0fff',
+                                bodyColor: '#e0e0e0',
+                                borderColor: '#9f0fff',
+                                borderWidth: 2,
+                                padding: 14,
+                                titleFont: {
+                                    size: 13,
+                                    weight: 'bold'
+                                },
+                                bodyFont: {
+                                    size: 12
+                                },
+                                displayColors: false,
+                                callbacks: {
+                                    title: function(context) {
+                                        const idx = context[0].dataIndex;
+                                        const date = new Date(dates[idx]);
+                                        return date.toLocaleDateString('en-GB', {
+                                            weekday: 'long',
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric'
+                                        });
+                                    },
+                                    label: function(context) {
+                                        const idx = context.dataIndex;
+                                        const predictedFormatted = predicted[idx] >= 0 ? 
+                                            `+${predicted[idx].toFixed(1)}bp` : 
+                                            `${predicted[idx].toFixed(1)}bp`;
+                                        const actualFormatted = actual[idx] >= 0 ? 
+                                            `+${actual[idx].toFixed(1)}bp` : 
+                                            `${actual[idx].toFixed(1)}bp`;
+                                        return [
+                                            `Accuracy: ${accuracy[idx].toFixed(2)}%`,
+                                            `Predicted: ${predictedFormatted}`,
+                                            `Actual: ${actualFormatted}`,
+                                            ``,
+                                            `Post-Meeting Limits:`,
+                                            `  Upper: ${uppers[idx].toFixed(3)}%`,
+                                            `  Lower: ${lowers[idx].toFixed(3)}%`,
+                                            ``,
+                                            `Pre-Meeting Limits:`,
+                                            `  Upper: ${prevUppers[idx].toFixed(3)}%`,
+                                            `  Lower: ${prevLowers[idx].toFixed(3)}%`
+                                        ];
+                                    }
+                                }
+                            },
+                            eventLines: true
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    color: 'rgba(159, 15, 255, 0.1)',
+                                    drawBorder: false
+                                },
+                                ticks: {
+                                    color: '#a0a0c0',
+                                    font: {
+                                        size: 11
+                                    },
+                                    maxRotation: 45,
+                                    minRotation: 0,
+                                    callback: function(index) {
+                                        const dateStr = dates[index];
+                                        const date = new Date(dateStr);
+                                        return date.toLocaleDateString('en-GB', {
+                                            month: 'short',
+                                            day: '2-digit'
+                                        });
+                                    }
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                grid: {
+                                    color: 'rgba(159, 15, 255, 0.1)',
+                                    drawBorder: false
+                                },
+                                ticks: {
+                                    color: '#a0a0c0',
+                                    font: {
+                                        size: 11
+                                    },
+                                    callback: function(value) {
+                                        return value + '%';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // Add click handler for event lines
+                ctx.canvas.addEventListener('click', function(e) {
+                    const rect = ctx.canvas.getBoundingClientRect();
+                    const canvasX = e.clientX - rect.left;
+                    const canvasY = e.clientY - rect.top;
+                    
+                    const xScale = chart.scales.x;
+                    const yScale = chart.scales.y;
+                    
+                    // Check each event to see if click is near an event line
+                    chartData.events.forEach(event => {
+                        // Skip if indicator is not selected
+                        if (!selectedIndicators[event.indicator_type]) return;
+                        
+                        const eventIndex = dates.indexOf(event.date);
+                        if (eventIndex === -1) return;
+                        
+                        const x = xScale.getPixelForValue(eventIndex);
+                        const yTop = yScale.top;
+                        const yBottom = yScale.bottom;
+                        
+                        // Check if click is near the event line (within 15px)
+                        if (Math.abs(canvasX - x) < 15 && canvasY >= yTop && canvasY <= yBottom) {
+                            showEventPanel(event);
+                        }
+                    });
+                });
+
+                charts.push(chart);
+            });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAvailableMeetings();
+        });
+    </script>
+</body>
+</html>
