@@ -4,7 +4,7 @@ import numpy as np
 from datetime import datetime, timedelta
 import os
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder=os.path.dirname(os.path.abspath(__file__)))
 
 # Cache for meetings and rate changes
 _MEETINGS_CACHE = None
